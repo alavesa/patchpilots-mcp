@@ -103,28 +103,17 @@ function buildUserMessage(files: FileContent[]): string {
   return parts.join("\n");
 }
 
-export async function runSecurityScan(
-  path: string,
-  severity: string,
+async function scanFiles(
+  files: FileContent[],
   apiKey: string,
   model: string,
 ): Promise<SecurityResult> {
-  const files = await collectFiles(path);
-
-  if (files.length === 0) {
-    return {
-      findings: [],
-      riskScore: "none",
-      summary: `No scannable files found at ${path}`,
-    };
-  }
-
   const client = new Anthropic({ apiKey });
   const jsonSchema = zodToJsonSchema(securityResultSchema);
 
   const response = await client.messages.create({
     model,
-    max_tokens: 8192,
+    max_tokens: 16384,
     temperature: 1,
     thinking: { type: "adaptive" as const },
     system: [
@@ -148,9 +137,60 @@ export async function runSecurityScan(
     .map((block) => block.text)
     .join("\n");
 
-  const result = securityResultSchema.parse(JSON.parse(text));
+  return securityResultSchema.parse(JSON.parse(text));
+}
 
-  // Filter by severity if not "low" (show everything)
+function mergeResults(results: SecurityResult[]): SecurityResult {
+  const allFindings = results.flatMap((r) => r.findings);
+  const severityOrder = ["critical", "high", "medium", "low", "none"] as const;
+  const worstScore = severityOrder.find((s) =>
+    results.some((r) => r.riskScore === s)
+  ) ?? "none";
+
+  return {
+    findings: allFindings,
+    riskScore: worstScore,
+    summary: `Scanned in ${results.length} batch(es). Found ${allFindings.length} finding(s).`,
+  };
+}
+
+export async function runSecurityScan(
+  path: string,
+  severity: string,
+  apiKey: string,
+  model: string,
+): Promise<SecurityResult> {
+  const files = await collectFiles(path);
+
+  if (files.length === 0) {
+    return {
+      findings: [],
+      riskScore: "none",
+      summary: `No scannable files found at ${path}`,
+    };
+  }
+
+  let result: SecurityResult;
+
+  try {
+    result = await scanFiles(files, apiKey, model);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+
+    // If output was truncated, split files into batches and retry
+    if ((msg.includes("JSON") || msg.includes("Unterminated")) && files.length > 1) {
+      const half = Math.ceil(files.length / 2);
+      const [first, second] = await Promise.all([
+        scanFiles(files.slice(0, half), apiKey, model),
+        scanFiles(files.slice(half), apiKey, model),
+      ]);
+      result = mergeResults([first, second]);
+    } else {
+      throw error;
+    }
+  }
+
+  // Filter by severity
   const severityOrder = ["critical", "high", "medium", "low"];
   const minIndex = severityOrder.indexOf(severity);
   if (minIndex >= 0 && minIndex < 3) {
