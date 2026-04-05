@@ -1,6 +1,6 @@
 {
   "name": "patchpilots-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "PatchPilots security agent as an MCP server. Catch supply chain attacks and security anti-patterns inside Claude Code, Cursor, and any MCP-compatible IDE.",
   "type": "module",
   "bin": {
