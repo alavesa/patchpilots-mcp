@@ -1,0 +1,53 @@
+{
+  "name": "patchpilots-mcp",
+  "version": "0.1.0",
+  "description": "PatchPilots security agent as an MCP server. Catch supply chain attacks and security anti-patterns inside Claude Code, Cursor, and any MCP-compatible IDE.",
+  "type": "module",
+  "bin": {
+    "patchpilots-mcp": "dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "security",
+    "code-review",
+    "supply-chain",
+    "owasp",
+    "patchpilots",
+    "claude",
+    "cursor",
+    "anthropic"
+  ],
+  "author": "Piia Alavesa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alavesa/patchpilots-mcp.git"
+  },
+  "homepage": "https://github.com/alavesa/patchpilots-mcp",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.79.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "glob": "^13.0.6",
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}
