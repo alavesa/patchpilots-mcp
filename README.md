@@ -1,5 +1,8 @@
 # patchpilots-mcp
 
+[![npm version](https://img.shields.io/npm/v/patchpilots-mcp)](https://www.npmjs.com/package/patchpilots-mcp)
+[![license](https://img.shields.io/npm/l/patchpilots-mcp)](https://github.com/alavesa/patchpilots-mcp/blob/main/LICENSE)
+
 PatchPilots security agent as an MCP server. Catch supply chain attacks and security anti-patterns inside Claude Code, Cursor, and any MCP-compatible IDE.
 
 ## What it does
