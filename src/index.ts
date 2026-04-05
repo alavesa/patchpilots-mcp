@@ -2,7 +2,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync, chmodSync } from "node:fs";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 import { z } from "zod";
@@ -19,7 +19,20 @@ function getApiKey(): string {
   try {
     const globalPath = resolve(homedir(), ".patchpilots.json");
     const config = JSON.parse(readFileSync(globalPath, "utf-8"));
-    if (config.apiKey) return config.apiKey;
+    if (config.apiKey) {
+      // Warn via stderr (doesn't interfere with stdio MCP transport)
+      process.stderr.write(
+        "[patchpilots-mcp] API key loaded from config file. For better security, use ANTHROPIC_API_KEY environment variable instead.\n"
+      );
+      // Auto-fix file permissions to owner-only
+      try {
+        const mode = statSync(globalPath).mode & 0o777;
+        if (mode !== 0o600) chmodSync(globalPath, 0o600);
+      } catch {
+        // Skip if permissions can't be changed
+      }
+      return config.apiKey;
+    }
   } catch {
     // No global config
   }
