@@ -70,14 +70,11 @@ server.tool(
   async ({ path, severity, roast, model }) => {
     try {
       const apiKey = getApiKey();
-      const result = await runSecurityScan(path, severity, apiKey, model ?? DEFAULT_MODEL);
+      const result = await runSecurityScan(path, severity, apiKey, model ?? DEFAULT_MODEL, roast);
       const badge = securityBadge(result.riskScore);
       result.riskScore = riskEmoji(result.riskScore) as typeof result.riskScore;
       let output = JSON.stringify(result, null, 2);
       if (badge) output += badge;
-      if (roast && result.findings.length > 0) {
-        output += "\n\n🔥 ROAST MODE 🔥\nRewrite the findings summary in a brutally honest, funny tone. Be savage but helpful — like a code review from a friend who doesn't sugarcoat anything. Reference specific findings above.";
-      }
       return {
         content: [{ type: "text" as const, text: output }],
       };
@@ -145,14 +142,11 @@ server.tool(
   async ({ path, severity, roast, model }) => {
     try {
       const apiKey = getApiKey();
-      const result = await runDesignAudit(path, severity, apiKey, model ?? DEFAULT_MODEL);
+      const result = await runDesignAudit(path, severity, apiKey, model ?? DEFAULT_MODEL, roast);
       const badge = designBadge(result.designHealthScore);
       result.designHealthScore = riskEmoji(result.designHealthScore) as typeof result.designHealthScore;
       let output = JSON.stringify(result, null, 2);
       if (badge) output += badge;
-      if (roast && result.findings.length > 0) {
-        output += "\n\n🔥 ROAST MODE 🔥\nRewrite the findings summary in a brutally honest, funny tone. Be savage but helpful — like a design review from a friend who doesn't sugarcoat anything. Reference specific findings above.";
-      }
       return {
         content: [{ type: "text" as const, text: output }],
       };
