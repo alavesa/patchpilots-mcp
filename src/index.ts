@@ -8,6 +8,7 @@ import { homedir } from "node:os";
 import { z } from "zod";
 import { runSecurityScan } from "./tools/security.js";
 import { runDepsScan } from "./tools/deps.js";
+import { runDesignAudit } from "./tools/designer.js";
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 
@@ -94,6 +95,37 @@ server.tool(
     try {
       const apiKey = getApiKey();
       const result = await runDepsScan(path, apiKey, model ?? DEFAULT_MODEL);
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return {
+        content: [{ type: "text" as const, text: `Error: ${msg}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
+server.tool(
+  "design_audit",
+  "WCAG 2.1 AA accessibility audit + design system consistency — checks color contrast, semantic HTML, keyboard navigation, ARIA, focus management, design tokens, CSS consistency, and component markup. Returns findings with WCAG success criterion references.",
+  {
+    path: z.string().describe("File or directory path to audit"),
+    severity: z
+      .enum(["critical", "high", "medium", "low"])
+      .default("medium")
+      .describe("Minimum severity to report"),
+    model: z
+      .string()
+      .optional()
+      .describe("Claude model to use (default: claude-sonnet-4-6)"),
+  },
+  async ({ path, severity, model }) => {
+    try {
+      const apiKey = getApiKey();
+      const result = await runDesignAudit(path, severity, apiKey, model ?? DEFAULT_MODEL);
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
       };

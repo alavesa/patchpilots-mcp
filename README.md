@@ -3,18 +3,19 @@
 [![npm version](https://img.shields.io/npm/v/patchpilots-mcp)](https://www.npmjs.com/package/patchpilots-mcp)
 [![license](https://img.shields.io/npm/l/patchpilots-mcp)](https://github.com/alavesa/patchpilots-mcp/blob/main/LICENSE)
 
-PatchPilots security agent as an MCP server. Catch supply chain attacks and security anti-patterns inside Claude Code, Cursor, and any MCP-compatible IDE.
+PatchPilots security and accessibility agents as an MCP server. Catch supply chain attacks, security anti-patterns, and accessibility issues inside Claude Code, Cursor, and any MCP-compatible IDE.
 
 ## What it does
 
-Two tools, one server:
+Three tools, one server:
 
 | Tool | What it scans |
 |------|--------------|
 | `security_scan` | OWASP Top 10 audit — injection, XSS, auth flaws, secrets, crypto issues, misconfigurations. Returns findings with CWE references. |
 | `scan_dependencies` | Supply chain risk scanner — typosquatting, postinstall scripts, scope changes, unmaintained packages, known vulnerabilities. |
+| `design_audit` | WCAG 2.1 AA accessibility audit — color contrast, semantic HTML, keyboard navigation, ARIA, focus management, design tokens, CSS consistency. Returns findings with WCAG success criterion references. |
 
-Both return structured JSON with severity, impact, and remediation for every finding.
+All return structured JSON with severity, impact, and remediation for every finding.
 
 ## Install
 
@@ -139,13 +140,41 @@ Returns:
 }
 ```
 
+### design_audit
+
+```
+path:     string   — file or directory to audit
+severity: string   — minimum severity: "critical" | "high" | "medium" | "low" (default: "medium")
+model:    string?  — Claude model (default: claude-sonnet-4-6)
+```
+
+Returns:
+```json
+{
+  "findings": [
+    {
+      "file": "src/components/Button.tsx",
+      "line": 15,
+      "severity": "high",
+      "category": "accessibility",
+      "wcagRef": "WCAG 2.1 SC 4.1.2",
+      "title": "div with onClick instead of button element",
+      "description": "Interactive element uses div with onClick...",
+      "remediation": "Replace <div onClick=...> with <button>..."
+    }
+  ],
+  "designHealthScore": "high",
+  "summary": "Found 4 accessibility issues..."
+}
+```
+
 ## When to use what
 
 | | CLI | GitHub Action | MCP (this) |
 |---|---|---|---|
 | **When** | You run it manually | Every PR automatically | On demand in conversation |
 | **Where** | Terminal | GitHub CI | Inside your IDE |
-| **Agents** | All 8 | All 8 | Security + deps |
+| **Agents** | All 8 | All 8 | Security + deps + design |
 | **Follow-up** | Read output, act yourself | Read PR comment, act yourself | Ask assistant to explain and fix |
 | **Safety net** | No — you remember to run it | Yes — always runs | No — only when IDE is open |
 
@@ -163,7 +192,7 @@ npx patchpilots audit ./src --write
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-All three use the same security analysis. The MCP server is for real-time, conversational security scanning while you code. The CLI and Action cover the rest.
+All three use the same analysis. The MCP server is for real-time, conversational security and accessibility scanning while you code. The CLI and Action cover the rest.
 
 ## License
 
