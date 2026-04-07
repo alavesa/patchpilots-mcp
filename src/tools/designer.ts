@@ -135,6 +135,28 @@ function mergeResults(results: DesignerResult[]): DesignerResult {
   };
 }
 
+async function scanWithRetry(
+  files: FileContent[],
+  apiKey: string,
+  model: string,
+): Promise<DesignerResult> {
+  try {
+    return await scanFiles(files, apiKey, model);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+
+    if ((msg.includes("JSON") || msg.includes("Unterminated")) && files.length > 1) {
+      const half = Math.ceil(files.length / 2);
+      const [first, second] = await Promise.all([
+        scanWithRetry(files.slice(0, half), apiKey, model),
+        scanWithRetry(files.slice(half), apiKey, model),
+      ]);
+      return mergeResults([first, second]);
+    }
+    throw error;
+  }
+}
+
 export async function runDesignAudit(
   path: string,
   severity: string,
@@ -151,24 +173,7 @@ export async function runDesignAudit(
     };
   }
 
-  let result: DesignerResult;
-
-  try {
-    result = await scanFiles(files, apiKey, model);
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-
-    if ((msg.includes("JSON") || msg.includes("Unterminated")) && files.length > 1) {
-      const half = Math.ceil(files.length / 2);
-      const [first, second] = await Promise.all([
-        scanFiles(files.slice(0, half), apiKey, model),
-        scanFiles(files.slice(half), apiKey, model),
-      ]);
-      result = mergeResults([first, second]);
-    } else {
-      throw error;
-    }
-  }
+  const result = await scanWithRetry(files, apiKey, model);
 
   // Filter by severity
   const severityOrder = ["critical", "high", "medium", "low"];
