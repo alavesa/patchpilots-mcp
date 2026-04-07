@@ -1,6 +1,6 @@
 {
   "name": "patchpilots-mcp",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "PatchPilots security and accessibility agents as an MCP server. Security scanning, supply chain analysis, and WCAG 2.1 AA audits inside Claude Code, Cursor, and any MCP-compatible IDE.",
   "type": "module",
   "bin": {
