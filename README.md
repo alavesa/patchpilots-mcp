@@ -86,6 +86,7 @@ If you already use [PatchPilots CLI](https://github.com/alavesa/patchpilots), yo
 ```
 path:     string   — file or directory to scan
 severity: string   — minimum severity: "critical" | "high" | "medium" | "low" (default: "medium")
+roast:    boolean? — brutally honest commentary (default: false)
 model:    string?  — Claude model (default: claude-sonnet-4-6)
 ```
 
@@ -145,6 +146,7 @@ Returns:
 ```
 path:     string   — file or directory to audit
 severity: string   — minimum severity: "critical" | "high" | "medium" | "low" (default: "medium")
+roast:    boolean? — brutally honest commentary (default: false)
 model:    string?  — Claude model (default: claude-sonnet-4-6)
 ```
 
@@ -167,6 +169,20 @@ Returns:
   "summary": "Found 4 accessibility issues..."
 }
 ```
+
+## Fun features
+
+**Risk emojis** — every scan shows a visual risk score: 🟢 none 🟡 low 🟠 medium 🔴 high 💀 critical
+
+**Clean scan badges** — pass with no findings and get a README badge:
+
+```markdown
+[![Reviewed by PatchPilots](https://img.shields.io/badge/reviewed%20by-PatchPilots%20🔒-blueviolet)](https://github.com/alavesa/patchpilots)
+```
+
+**Roast mode** — set `roast=true` on `security_scan` or `design_audit` for brutally honest, funny commentary on your findings. Same structured output, spicier language. Try asking your IDE:
+
+> "roast the accessibility of my code"
 
 ## When to use what
 
