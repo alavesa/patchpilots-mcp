@@ -9,6 +9,7 @@ import { z } from "zod";
 import { runSecurityScan } from "./tools/security.js";
 import { runDepsScan } from "./tools/deps.js";
 import { runDesignAudit } from "./tools/designer.js";
+import { riskEmoji, securityBadge, designBadge, depsBadge } from "./format.js";
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 
@@ -50,24 +51,35 @@ const server = new McpServer({
 
 server.tool(
   "security_scan",
-  "OWASP Top 10 security audit — finds injection, XSS, auth flaws, secrets, crypto issues, and misconfigurations. Returns structured findings with CWE references, severity, impact, and remediation.",
+  "OWASP Top 10 security audit — finds injection, XSS, auth flaws, secrets, crypto issues, and misconfigurations. Returns structured findings with CWE references, severity, impact, and remediation. Set roast=true for brutally honest commentary.",
   {
     path: z.string().describe("File or directory path to scan"),
     severity: z
       .enum(["critical", "high", "medium", "low"])
       .default("medium")
       .describe("Minimum severity to report"),
+    roast: z
+      .boolean()
+      .default(false)
+      .describe("Roast mode — brutally honest and funny commentary on findings"),
     model: z
       .string()
       .optional()
       .describe("Claude model to use (default: claude-sonnet-4-6)"),
   },
-  async ({ path, severity, model }) => {
+  async ({ path, severity, roast, model }) => {
     try {
       const apiKey = getApiKey();
       const result = await runSecurityScan(path, severity, apiKey, model ?? DEFAULT_MODEL);
+      const badge = securityBadge(result.riskScore);
+      result.riskScore = riskEmoji(result.riskScore) as typeof result.riskScore;
+      let output = JSON.stringify(result, null, 2);
+      if (badge) output += badge;
+      if (roast && result.findings.length > 0) {
+        output += "\n\n🔥 ROAST MODE 🔥\nRewrite the findings summary in a brutally honest, funny tone. Be savage but helpful — like a code review from a friend who doesn't sugarcoat anything. Reference specific findings above.";
+      }
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        content: [{ type: "text" as const, text: output }],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -95,8 +107,12 @@ server.tool(
     try {
       const apiKey = getApiKey();
       const result = await runDepsScan(path, apiKey, model ?? DEFAULT_MODEL);
+      const badge = depsBadge(result.riskScore);
+      result.riskScore = riskEmoji(result.riskScore) as typeof result.riskScore;
+      let output = JSON.stringify(result, null, 2);
+      if (badge) output += badge;
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        content: [{ type: "text" as const, text: output }],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -110,24 +126,35 @@ server.tool(
 
 server.tool(
   "design_audit",
-  "WCAG 2.1 AA accessibility audit + design system consistency — checks color contrast, semantic HTML, keyboard navigation, ARIA, focus management, design tokens, CSS consistency, and component markup. Returns findings with WCAG success criterion references.",
+  "WCAG 2.1 AA accessibility audit + design system consistency — checks color contrast, semantic HTML, keyboard navigation, ARIA, focus management, design tokens, CSS consistency, and component markup. Returns findings with WCAG success criterion references. Set roast=true for brutally honest commentary.",
   {
     path: z.string().describe("File or directory path to audit"),
     severity: z
       .enum(["critical", "high", "medium", "low"])
       .default("medium")
       .describe("Minimum severity to report"),
+    roast: z
+      .boolean()
+      .default(false)
+      .describe("Roast mode — brutally honest and funny commentary on findings"),
     model: z
       .string()
       .optional()
       .describe("Claude model to use (default: claude-sonnet-4-6)"),
   },
-  async ({ path, severity, model }) => {
+  async ({ path, severity, roast, model }) => {
     try {
       const apiKey = getApiKey();
       const result = await runDesignAudit(path, severity, apiKey, model ?? DEFAULT_MODEL);
+      const badge = designBadge(result.designHealthScore);
+      result.designHealthScore = riskEmoji(result.designHealthScore) as typeof result.designHealthScore;
+      let output = JSON.stringify(result, null, 2);
+      if (badge) output += badge;
+      if (roast && result.findings.length > 0) {
+        output += "\n\n🔥 ROAST MODE 🔥\nRewrite the findings summary in a brutally honest, funny tone. Be savage but helpful — like a design review from a friend who doesn't sugarcoat anything. Reference specific findings above.";
+      }
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        content: [{ type: "text" as const, text: output }],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
